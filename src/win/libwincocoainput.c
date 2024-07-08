@@ -141,7 +141,7 @@ void initialize(
     }
 
     ImmReleaseContext(hwnd, himc);
-    himc = ImmAssociateContext(hwnd, 0);
+    ImmAssociateContext(hwnd, 0);
     CIDebug("CocoaInput Windows initializer done!");
 }
 
