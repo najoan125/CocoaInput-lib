@@ -24,21 +24,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: '(Windows) Setup MSYS2'
+      - name: '(Windows) Setup MSVC'
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: clang64
-          update: true
-          install: >-
-            git
-          pacboy: >-
-            cmake:p
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: '(Windows) Build CocoaInput-lib'
         if: runner.os == 'Windows'
-        shell: bash.exe --noprofile --norc -e -o pipefail {0}
-        run: ./build_Windows.sh
+        shell: cmd
+        run: nmake /f src\win\Makefile install
 
       - name: '(macOS) Build CocoaInput-lib'
         if: runner.os == 'macOS'

@@ -1,23 +1,21 @@
-CC	= gcc.exe
-CFLAGS	= -Wall -fPIC
-FFLAGS	= 
-OBJS	= libwincocoainput.o logger.o
-LIBS	= 
-TARGET	= libwincocoainput.dll
-DISTDIR	= ../../build/
-RM	= rm
-CP	= cp
+CC = cl.exe
+CFLAGS = /D_USRDLL /D_WINDLL /LD
+FFLAGS = 
+OBJS = libwincocoainput.obj logger.obj
+LIBS = imm32.lib user32.lib
+TARGET = libwincocoainput.dll
+DISTDIR = ..\..\build\
 
 all: $(TARGET)
 
 install: $(TARGET)
-	$(CP) -f $(TARGET) $(DISTDIR)
+    copy $(TARGET) $(DISTDIR)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(FFLAGS) $(LIBS)  -shared -o $@ $(OBJS) -limm32
+    $(CC) $(CFLAGS) $(FFLAGS) /Fe$(TARGET) $(OBJS) /link $(LIBS)
 
-.c.o:
-	$(CC) $(CFLAGS) $(LIBS) -c $<
+.c.obj:
+    $(CC) $(CFLAGS) /c $<
 
 clean:
-	$(RM) -f $(TARGET) $(OBJS)
+    del $(TARGET) $(OBJS)
