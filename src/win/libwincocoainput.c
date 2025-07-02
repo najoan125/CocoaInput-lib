@@ -126,15 +126,8 @@ void initialize(
     setCallback(c_draw, c_done, c_rect);
     hwnd = (HWND)hwndp;
     glfwWndProc = (WNDPROC)GetWindowLongPtr(hwnd, GWLP_WNDPROC);
-    //SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)wrapper_wndProc);
     CIDebug("Window procedure replaced");
 
-    // input_himc = ImmGetContext(hwnd);
-    /*if(!hImc){
-    hImc = ImmCreateContext();
-    HIMC oldhImc = ImmAssociateContext( hwnd, hImc );
-    }*/
-    // ImmReleaseContext(hwnd,input_himc);
     himc = ImmGetContext(hwnd);
     if (!himc) {
         himc = ImmCreateContext();
