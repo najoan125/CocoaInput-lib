@@ -31,7 +31,8 @@ jobs:
       - name: '(Windows) Build CocoaInput-lib'
         if: runner.os == 'Windows'
         shell: cmd
-        run: nmake /f src\win\Makefile install
+        working-directory: ./src/win
+        run: nmake install
 
       - name: '(macOS) Build CocoaInput-lib'
         if: runner.os == 'macOS'
