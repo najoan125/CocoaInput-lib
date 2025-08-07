@@ -50,13 +50,13 @@ static DataManager* instance = nil;
     Class viewClass = [view class];
     Class dataClass = [[DataManager sharedManager] class];
     replaceInstanceMethod(viewClass, @selector(keyDown:), @selector(org_keyDown:), dataClass);
-    replaceInstanceMethod(viewClass, @selector(hasMarkedText), @selector(org_hasMarkedText), dataClass);
-    replaceInstanceMethod(viewClass, @selector(markedRange), @selector(org_markedRange), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(hasMarkedText), @selector(org_hasMarkedText), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(markedRange), @selector(org_markedRange), dataClass);
     replaceInstanceMethod(viewClass, @selector(interpretKeyEvents:), @selector(org_interpretKeyEvents:), dataClass);
-    replaceInstanceMethod(viewClass, @selector(insertText:replacementRange:), @selector(org_insertText:replacementRange:), dataClass);
-    replaceInstanceMethod(viewClass, @selector(firstRectForCharacterRange:actualRange:), @selector(org_firstRectForCharacterRange:actualRange:), dataClass);
-    replaceInstanceMethod(viewClass, @selector(setMarkedText:selectedRange:replacementRange:), @selector(org_setMarkedText:selectedRange:replacementRange:), dataClass);
-    replaceInstanceMethod(viewClass, @selector(unmarkText), @selector(org_unmarkText), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(insertText:replacementRange:), @selector(org_insertText:replacementRange:), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(firstRectForCharacterRange:actualRange:), @selector(org_firstRectForCharacterRange:actualRange:), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(setMarkedText:selectedRange:replacementRange:), @selector(org_setMarkedText:selectedRange:replacementRange:), dataClass);
+//    replaceInstanceMethod(viewClass, @selector(unmarkText), @selector(org_unmarkText), dataClass);
 
     if (@available(macOS 14.0, *)) {
         NSTextInsertionIndicator *indicator = [[NSTextInsertionIndicator alloc] init];
@@ -70,11 +70,67 @@ static DataManager* instance = nil;
     CILog(@"Complete to modify GLFWView");
 }
 
+static NSDictionary<NSString*, NSString*>* hangulToEnglishMap = nil;
+
++ (void)initializeHangulToEnglishMap {
+    if (hangulToEnglishMap == nil) {
+        hangulToEnglishMap = @{
+            // 자음 (초성/종성)
+            @"ㄱ": @"r", @"ㄲ": @"R", @"ㄴ": @"s", @"ㄷ": @"e", @"ㄸ": @"E",
+            @"ㄹ": @"f", @"ㅁ": @"a", @"ㅂ": @"q", @"ㅃ": @"Q", @"ㅅ": @"t",
+            @"ㅆ": @"T", @"ㅇ": @"d", @"ㅈ": @"w", @"ㅉ": @"W", @"ㅊ": @"c",
+            @"ㅋ": @"z", @"ㅌ": @"x", @"ㅍ": @"v", @"ㅎ": @"g",
+
+            // 모음 (중성)
+            @"ㅏ": @"k", @"ㅐ": @"o", @"ㅑ": @"i", @"ㅒ": @"O", @"ㅓ": @"j",
+            @"ㅔ": @"p", @"ㅕ": @"u", @"ㅖ": @"P", @"ㅗ": @"h", @"ㅛ": @"y",
+            @"ㅜ": @"n", @"ㅠ": @"b", @"ㅡ": @"m", @"ㅣ": @"l",
+        };
+    }
+}
+
 - (void)keyDown:(NSEvent*)theEvent {//GLFWContentView改変用
+    [DataManager initializeHangulToEnglishMap];
+
     //見づらすぎて改修しづらい
     if ([DataManager sharedManager].activeView != nil) {
         CIDebug(@"New keyEvent came and sent to textfield.");
         [self org_interpretKeyEvents:@[ theEvent ]];
+    } else {
+        NSString* baseChars = [theEvent charactersIgnoringModifiers];
+
+        if (baseChars != nil && [baseChars length] > 0) {
+            unichar firstChar = [baseChars characterAtIndex:0];
+            if ((firstChar >= 0xAC00 && firstChar <= 0xD7A3) ||
+                (firstChar >= 0x1100 && firstChar <= 0x11FF) ||
+                (firstChar >= 0x3130 && firstChar <= 0x318F)) {
+                baseChars = [hangulToEnglishMap objectForKey:baseChars]; // korean to english
+            }
+
+            NSString* finalChars = baseChars;
+
+            // Shift/Capslock
+            if (theEvent.modifierFlags & NSEventModifierFlagCapsLock) {
+                if (!(theEvent.modifierFlags & NSEventModifierFlagShift)) {
+                    finalChars = [baseChars uppercaseString];
+                }
+            } else if (theEvent.modifierFlags & NSEventModifierFlagShift) {
+                finalChars = [baseChars uppercaseString];
+            }
+
+            CIDebug(@"Forcing keyEvent to ASCII and sending to original keyDown.");
+            NSEvent* asciiEvent = [NSEvent keyEventWithType:theEvent.type
+                                                   location:theEvent.locationInWindow
+                                              modifierFlags:theEvent.modifierFlags
+                                                  timestamp:theEvent.timestamp
+                                               windowNumber:theEvent.windowNumber
+                                                    context:nil // context is deprecated
+                                                 characters:finalChars // 최종적으로 변환된 문자를 사용합
+                                charactersIgnoringModifiers:finalChars // 여기도 일관성을 위해 동일하게
+                                                  isARepeat:theEvent.isARepeat
+                                                    keyCode:theEvent.keyCode];
+            [self org_interpretKeyEvents:@[ asciiEvent ]];
+        }
     }
 
     /*
