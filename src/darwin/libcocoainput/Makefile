@@ -1,7 +1,7 @@
 CC	= gcc
 CFLAGS	= -Wall -fobjc-arc -mmacosx-version-min=10.14 -arch x86_64 -arch arm64
 FFLAGS	= -framework Foundation -framework Cocoa
-OBJS	= cocoainput.o Logger.o DataManager.o MinecraftView.o
+OBJS	= cocoainput.o Logger.o DataManager.o
 LIBS	=
 TARGET	= libdarwincocoainput.dylib
 DISTDIR	= ../../../build/

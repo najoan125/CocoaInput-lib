@@ -33,70 +33,10 @@ void initialize(LogFunction log,LogFunction error,LogFunction debug){
     [thread start];
 }
 
-void addInstance(
-    const char* uuid,
-    void (*insertText_p)(const char*, const int, const int),
-    void (*setMarkedText_p)(const char*, const int, const int, const int, const int),
-    void (*firstRectForCharacterRange_p)(const float*)
-) {
-    CIDebug([NSString stringWithFormat:@"New textfield %s has registered.", uuid]);
-    MinecraftView* mc = [[MinecraftView alloc] init];
-    mc.insertText = insertText_p;
-    mc.setMarkedText = setMarkedText_p;
-    mc.firstRectForCharacterRange = firstRectForCharacterRange_p;
-    [[[DataManager sharedManager] dic]
-     setObject:mc
-     forKey:[[NSString alloc] initWithCString:uuid
-                                     encoding:NSUTF8StringEncoding]];
-}
-
-void removeInstance(const char* uuid) {
-    CIDebug([NSString stringWithFormat:@"Textfield %s has been removed.", uuid]);
-    [[[DataManager sharedManager] dic]
-     removeObjectForKey:[[NSString alloc]
-                         initWithCString:uuid
-                         encoding:NSUTF8StringEncoding]];
-}
-
-void refreshInstance(void) {
-    CIDebug(@"All textfields has been removed.");
-    [[NSTextInputContext currentInputContext] discardMarkedText];
-    [DataManager sharedManager].activeView = nil;
-    [DataManager sharedManager].dic = [NSMutableDictionary dictionary];
-}
-
-void discardMarkedText(const char* uuid) {
-    CIDebug(@"Active marked text has been discarded.");
-}
-
-void setIfReceiveEvent(const char* uuid, int yn) {
-    CIDebug([NSString stringWithFormat:@"Textfield %s's flag has changed to %d.",
-             uuid, yn]);
-    if (yn == 1) {
-        [DataManager sharedManager].activeView = [[[DataManager sharedManager] dic]
-                                                  objectForKey:[[NSString alloc] initWithCString:uuid
-                                                                                        encoding:NSUTF8StringEncoding]];
+void setFocused(int val) {
+    if (val == 1) {
+        [DataManager sharedManager].isFocused = YES;
     } else {
-        if ([DataManager sharedManager].activeView != nil &&
-            [[[[DataManager sharedManager] dic]
-              objectForKey:[[NSString alloc]
-                            initWithCString:uuid
-                            encoding:NSUTF8StringEncoding]]
-             isEqual:[DataManager sharedManager].activeView])
-            [DataManager sharedManager].activeView = nil;
+        [DataManager sharedManager].isFocused = NO;
     }
-}
-
-float invertYCoordinate(float y) {
-    CIDebug(@"InvertYCoordinate function used");
-    return [[NSScreen mainScreen] visibleFrame].size.height +
-    [[NSScreen mainScreen] visibleFrame].origin.y - y;
-}
-
-const char* getStatus(void) {
-    if ([DataManager sharedManager].activeView == nil) {
-        return nil;
-    }
-
-    return [[NSTextInputContext currentInputContext].selectedKeyboardInputSource cStringUsingEncoding:NSUTF8StringEncoding];
 }
